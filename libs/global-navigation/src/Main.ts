@@ -25,13 +25,14 @@ type GlobalNavigation = {
 
 export type Input = {
   gnavSource: URL;
-  asideSource: URL | null;
+  promoBarSource: URL | null;
   gnavTop?: number;
   isLocalNav: boolean;
   mountpoint: HTMLElement;
   unavEnabled: boolean;
   placeholders: Promise<Map<string, string>>;
   miloConfig?: MiloConfig;
+  loadBlock: (element: Element | null) => void;
   getStageDomainMap: (domainmap: unknown[], env: string) =>
     { [key: string]: string }
   // MEP: {
@@ -43,10 +44,10 @@ export type Input = {
 export const main = async (
   input: Input
 ): Promise<GlobalNavigation | IrrecoverableError> => {
-  const { gnavSource, mountpoint, unavEnabled, miloConfig } = input;
+  const { gnavSource, mountpoint, unavEnabled, miloConfig, loadBlock } = input;
 
   if (!(gnavSource instanceof URL)) {
-    lanaLog(`gnavSource is invalid: ${gnavSource}`)
+    lanaLog(`gnavSource is invalid: ${gnavSource}`);
     throw new IrrecoverableError("gnavSource needs to be a URL object");
   }
   // Initialize MiloConfig with validation
@@ -64,19 +65,19 @@ export const main = async (
     lanaLog(initial.message);
     throw initial;
   }
-  const { mainNav, aside: _aside } = initial;
+  const { mainNav, promoBar } = initial;
   if (mainNav instanceof IrrecoverableError) {
     lanaLog(mainNav.message);
     throw mainNav;
   }
+
+  processPromoBar(promoBar, loadBlock);
 
   const gnavData = parseNavigation(mainNav, unavEnabled);
   if (gnavData instanceof IrrecoverableError) {
     lanaLog(gnavData.message);
     throw gnavData;
   }
-  
-  // TODO: Implement Aside
   
   await renderGnav(gnavData)(mountpoint);
 
@@ -199,6 +200,31 @@ export const postRenderingTasks = async (
     setGnavTopPosition: (_): void => {},
     getGnavTopPosition: (): number => 0,
   };
+};
+
+const processPromoBar = (
+  promoBar: HTMLElement | IrrecoverableError,
+  loadBlock: (element: Element | null) => void
+): void => {
+  if (promoBar instanceof IrrecoverableError) {
+    lanaLog(promoBar.message);
+    throw promoBar;
+  }
+
+  const notificationBlock = promoBar.querySelector('.notification');
+
+  try {
+    loadBlock(notificationBlock);
+  } catch (error) {
+    const errorMsg = `Failed to load notification block: ${error}`;
+    lanaLog(errorMsg);
+    throw new IrrecoverableError(errorMsg);
+  }
+
+  if (notificationBlock) {
+    const promoWrapper = document.querySelector('.feds-promo-aside-wrapper');
+    promoWrapper?.appendChild(notificationBlock);
+  }
 };
 
 const closeEverything = (): void => {

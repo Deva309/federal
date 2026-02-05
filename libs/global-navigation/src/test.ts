@@ -8,7 +8,7 @@ const mountpoint = document.querySelector('header');
 if (!mountpoint) throw new Error('bad mountpoint');
 const input = {
   gnavSource: new URL("https://www.adobe.com/dc-shared/navigation/globalnav/localnav-acrobat-teams"),
-  asideSource: null,
+  promoBarSource: null,
   isLocalNav: true,
   mountpoint,
   unavEnabled: false
@@ -18,7 +18,7 @@ const input = {
   const initial = await getInitialHTML(input)
   if (initial instanceof IrrecoverableError)
     throw initial;
-  const { mainNav, aside: _aside } = initial;
+  const { mainNav, promoBar: _promoBar } = initial;
   if (mainNav instanceof IrrecoverableError)
     throw mainNav;
 
