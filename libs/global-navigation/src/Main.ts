@@ -32,7 +32,7 @@ export type Input = {
   unavEnabled: boolean;
   placeholders: Promise<Map<string, string>>;
   miloConfig?: MiloConfig;
-  loadBlock: (element: Element | null) => void;
+  loadBlock: (element: Element | null) => Promise<void>;
   getStageDomainMap: (domainmap: unknown[], env: string) =>
     { [key: string]: string }
   // MEP: {
@@ -71,7 +71,7 @@ export const main = async (
     throw mainNav;
   }
 
-  processPromoBar(promoBar, loadBlock);
+  await processPromoBar(promoBar, loadBlock);
 
   const gnavData = parseNavigation(mainNav, unavEnabled);
   if (gnavData instanceof IrrecoverableError) {
@@ -202,10 +202,10 @@ export const postRenderingTasks = async (
   };
 };
 
-const processPromoBar = (
+const processPromoBar = async (
   promoBar: HTMLElement | IrrecoverableError,
-  loadBlock: (element: Element | null) => void
-): void => {
+  loadBlock: (element: Element | null) => Promise<void>
+): Promise<void> => {
   if (promoBar instanceof IrrecoverableError) {
     lanaLog(promoBar.message);
     throw promoBar;
@@ -214,7 +214,7 @@ const processPromoBar = (
   const notificationBlock = promoBar.querySelector('.notification');
 
   try {
-    loadBlock(notificationBlock);
+    await loadBlock(notificationBlock);
   } catch (error) {
     const errorMsg = `Failed to load notification block: ${error}`;
     lanaLog(errorMsg);
